@@ -164,3 +164,69 @@ describe('DELETE /todo/:id', () => {
 			.end(done);
 	});
 });
+
+describe('PATCH /todo/:id', () => {
+	it('should update incompoleted todo to completed and set completedAt to be none', (done) => {
+		const id = todos[0]._id.toHexString();
+		const body = {
+			text: 'FF 91 go production',
+			completed: true
+		};
+
+		request(app)
+			.patch(`/todo/${id}`)
+			.send(body)
+			.expect(200)
+			.expect(res => {
+				expect(res.body.todo.text).toBe('FF 91 go production');
+			})
+			.end((err) => {
+				if (err) {
+					return done(err);
+				}
+
+				Todo.findById(id)
+					.then(todo => {
+						expect(todo.text).toBe('FF 91 go production');
+						expect(todo.completed).toBe(true);
+						expect(typeof(todo.completedAt)).toBe('number');
+						done();
+					})
+					.catch(e => {
+						done(e);
+					});
+			});
+	});
+
+	it('should update compoleted todo to incompleted', (done) => {
+		const id = todos[0]._id.toHexString();
+		const body = {
+			text: 'FF 81 go production',
+			completed: false
+		};
+
+		request(app)
+			.patch(`/todo/${id}`)
+			.send(body)
+			.expect(200)
+			.expect(res => {
+				expect(res.body.todo.text).toBe('FF 81 go production');
+			})
+			.end((err) => {
+				if (err) {
+					return done(err);
+				}
+
+				Todo.findById(id)
+					.then(todo => {
+						expect(todo.text).toBe('FF 81 go production');
+						expect(todo.completed).toBe(false);
+						expect(todo.completedAt).toBeFalsy();
+						done();
+					})
+					.catch(e => {
+						done(e);
+					});
+			});
+	});
+});
