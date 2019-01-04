@@ -1,3 +1,5 @@
+require('./config/config');
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const { ObjectID } = require('mongodb');
@@ -109,7 +111,7 @@ app.patch('/todo/:id', (req, res) => {
 		});
 });
 
-app.listen(3000, () => {
+app.listen(process.env.PORT, () => {
 	console.log('Start listening to port 3000');
 });
 
