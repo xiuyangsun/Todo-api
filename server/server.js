@@ -14,9 +14,10 @@ const app = express();
 
 app.use(bodyParser.json());
 
-app.post('/todos', (req, res) => {
+app.post('/todos', authenticate, (req, res) => {
 	const todo = new Todo({
-		text: req.body.text
+		text: req.body.text,
+		_creator: req.user._id
 	});
 
 	todo.save()
@@ -31,9 +32,11 @@ app.post('/todos', (req, res) => {
 		});
 });
 
-app.get('/todos', (req, res) => {
+app.get('/todos', authenticate, (req, res) => {
 	Todo
-		.find()
+		.find({
+			_creator: req.user._id
+		})
 		.then(todos => {
 			res.send({ todos });
 		}, e => {
@@ -43,7 +46,7 @@ app.get('/todos', (req, res) => {
 		});
 });
 
-app.get('/todo/:id', (req, res) => {
+app.get('/todo/:id', authenticate, (req, res) => {
 	const id = req.params.id;
 
 	if (!ObjectID.isValid(id)) {
@@ -53,7 +56,10 @@ app.get('/todo/:id', (req, res) => {
 	}
 
 	Todo
-		.findById(id)
+		.findOne({
+			_id: id,
+			_creator: req.user._id
+		})
 		.then(todo => {
 			if (!todo) {
 				res
@@ -68,7 +74,7 @@ app.get('/todo/:id', (req, res) => {
 		});
 });
 
-app.delete('/todo/:id', (req, res) => {
+app.delete('/todo/:id', authenticate, (req, res) => {
 	const id = req.params.id;
 
 	if (!ObjectID.isValid(id)) {
@@ -76,7 +82,10 @@ app.delete('/todo/:id', (req, res) => {
 	}
 
 	Todo
-		.findByIdAndDelete(id)
+		.findOneAndDelete({
+			_id: id,
+			_creator: req.user._id
+		})
 		.then(todo => {
 			if (!todo) {
 				res.status(404).send({});
@@ -88,7 +97,7 @@ app.delete('/todo/:id', (req, res) => {
 		});
 });
 
-app.patch('/todo/:id', (req, res) => {
+app.patch('/todo/:id', authenticate, (req, res) => {
 	const id = req.params.id;
 	const body = _.pick(req.body, ['text', 'completed']);
 
@@ -103,7 +112,7 @@ app.patch('/todo/:id', (req, res) => {
 		body.completedAt = null;
 	}
 
-	Todo.findOneAndUpdate({_id: id}, {$set: body}, { new: true })
+	Todo.findOneAndUpdate({_id: id, _creator: req.user._id}, {$set: body}, { new: true })
 		.then(todo => {
 			res.send({ todo });
 		})

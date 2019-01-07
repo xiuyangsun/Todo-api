@@ -2,7 +2,7 @@ const { ObjectID } = require('mongodb');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-const { Todo } = require('../../server/models/todo'); 
+const { Todo } = require('../../server/models/todo');
 const { User } = require('../../server/models/user');
 
 const userOneId = new ObjectID();
@@ -18,7 +18,11 @@ const users = [{
 },{
 	_id: userTwoId,
 	email: 'testUser2@email.com',
-	password: 'user2Password'
+	password: 'user2Password',
+	tokens: [{
+		access: 'auth',
+		token: jwt.sign({_id: userTwoId, access: 'auth'}, 'abc123').toString()
+	}]
 }];
 
 const populateUsers = (done) => {
@@ -38,15 +42,18 @@ const populateUsers = (done) => {
 const todos = [
 	{
 		_id: new ObjectID(),
-		text: 'First todo'
+		text: 'First todo',
+		_creator: userOneId
 	}, {
 		_id: new ObjectID(),
-		text: 'Second todo'
+		text: 'Second todo',
+		_creator: userTwoId
 	}, {
 		_id: new ObjectID(),
 		text: 'Third todo',
 		completed: true,
-		completedAt: 430
+		completedAt: 430,
+		_creator: userOneId
 	}
 ];
 
