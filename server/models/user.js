@@ -55,6 +55,17 @@ UserSchema.methods.toJSON = function () {
 	return _.pick(userObject, ['_id', 'email']);
 };
 
+UserSchema.methods.removeToken = function (token) {
+	const user = this;
+	return user.update({
+		$pull: {
+			tokens: {
+				token
+			}
+		}
+	});
+};
+
 UserSchema.statics.findByToken = function (token) {
 	const User = this;
 	let decoded;
@@ -80,7 +91,7 @@ UserSchema.statics.findByCredentials = function (email, password) {
 			if (!user) {
 				return Promise.reject('User not exist');
 			}
-			
+
 			return new Promise((resolve, reject) => {
 				bcrypt.compare(password, user.password, (err, res) => {
 					if (res) {
