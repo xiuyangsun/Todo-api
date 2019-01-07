@@ -4,29 +4,16 @@ const { ObjectID } = require('mongodb');
 
 const { app } = require('../server/server');
 const { Todo } = require('../server/models/todo');
+const {
+	todos,
+	populateTodos,
+	users,
+	populateUsers
+} = require('./seed/seed');
 
-const todos = [
-	{
-		_id: new ObjectID(),
-		text: 'First todo'
-	}, {
-		_id: new ObjectID(),
-		text: 'Second todo'
-	}, {
-		_id: new ObjectID(),
-		text: 'Third todo',
-		completed: true,
-		completedAt: 430
-	}
-];
 
-beforeEach((done) => {
-	Todo.deleteMany({})
-		.then(() => {
-			Todo.insertMany(todos);
-		})
-		.then(() => done());
-});
+beforeEach(populateUsers);
+beforeEach(populateTodos);
 
 describe('POST /todos', () => {
 	it('should create a new to do', (done) => {
@@ -228,5 +215,85 @@ describe('PATCH /todo/:id', () => {
 						done(e);
 					});
 			});
+	});
+});
+
+describe('GET /users/me', () => {
+	it('should return user if authenticated', (done) => {
+		request(app)
+			.get('/users/me')
+			.set('x-auth', users[0].tokens[0].token)
+			.expect(200)
+			.expect(res => {
+				expect(res.body._id).toBe(users[0]._id.toHexString());
+				expect(res.body.email).toBe(users[0].email);
+			})
+			.end(err => {
+				if (err) {
+					return done(err);
+				}
+
+				done();
+			});
+	});
+
+	it('should return 401 if not authenticated', (done) => {
+		request(app)
+			.get('/users/me')
+			.expect(401)
+			.expect(res => {
+				expect(res.body).toEqual({});
+			})
+			.end(err => {
+				if (err) {
+					return done(err);
+				}
+
+				done();
+			});
+	});
+});
+
+describe('POST /users', () => {
+	it('should create user', (done) => {
+		const email = 'asdadfasd@email.com';
+		const password = 'asddsfasdf';
+
+		request(app)
+			.post('/users')
+			.send({email, password})
+			.expect(200)
+			.expect(res => {
+				expect(res.body.email).toBe(email);
+				expect(res.body._id).toBeTruthy();
+			})
+			.end(err => {
+				if (err) {
+					done(err);
+				}
+				done();
+			});
+	});
+
+	it('should return validation error if request invalid', (done) => {
+		const email = 'asdfssdadfasd@email.com';
+		const password = '123';
+
+		request(app)
+			.post('/users')
+			.send({email, password})
+			.expect(400)
+			.end(done);
+	});
+
+	it('should not create user if email exists', (done) => {
+		const email = 'testUser2@email.com';
+		const password = 'asddsfasdf';
+
+		request(app)
+			.get('/users/me')
+			.send({email, password})
+			.expect(401)
+			.end(done);
 	});
 });
